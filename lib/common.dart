@@ -23,8 +23,8 @@ typedef OnStringTranslateCheck = String? Function(String? value);
 enum CaptionLocation { above, below, leading, following }
 
 /// Direction-agnostic text alignment, "more inclusive than left/right".
-/// Collides with Flutter's `TextAlign` — see README for resolution.
-enum TextAlign { start, end, center }
+/// Named to avoid colliding with Flutter's `TextAlign`.
+enum NccTextAlign { start, end, center }
 
 /// True when [string] is null or empty.
 bool nullOrBlank(String? string) {
@@ -34,15 +34,4 @@ bool nullOrBlank(String? string) {
 /// True when [anInt] is null or equal to zero.
 bool nullOrZero(int? anInt) {
     return anInt == null || anInt == 0;
-}
-
-/// Renders a nullable bool as the literal strings 'null', 'true', or 'false'.
-String boolishToString(bool? value) {
-    if (value == null) {
-        return 'null';
-    } else if (value == true) {
-        return 'true';
-    } else {
-        return 'false';
-    }
 }

@@ -6,12 +6,16 @@ import 'package:path_provider/path_provider.dart';
 /// A list of rows, where each row is a [Strings] of column values.
 typedef DelimitedStrings = List<Strings>;
 
+Future<File> _documentsFile(String fileName) async {
+    Directory documents = await getApplicationDocumentsDirectory();
+    return File('${documents.path}/$fileName');
+}
+
 /// Writes [data] to a file inside the app's documents directory.
 /// Overwrites any existing file at the same path. Returns true on success.
 Future<bool> localFileWrite(String fileName, String data) async {
     try {
-        Directory documents = await getApplicationDocumentsDirectory();
-        File target = File('${documents.path}/$fileName');
+        File target = await _documentsFile(fileName);
         await target.writeAsString(data);
         return true;
     } catch (_) {
@@ -23,8 +27,7 @@ Future<bool> localFileWrite(String fileName, String data) async {
 /// it if needed. Returns true on success.
 Future<bool> localFileAppend(String fileName, String data) async {
     try {
-        Directory documents = await getApplicationDocumentsDirectory();
-        File target = File('${documents.path}/$fileName');
+        File target = await _documentsFile(fileName);
         await target.writeAsString(data, mode: FileMode.append);
         return true;
     } catch (_) {
@@ -36,8 +39,7 @@ Future<bool> localFileAppend(String fileName, String data) async {
 /// (split on '\n'). Returns null if the file does not exist or cannot be read.
 Future<Strings?> localFileRead(String fileName) async {
     try {
-        Directory documents = await getApplicationDocumentsDirectory();
-        File source = File('${documents.path}/$fileName');
+        File source = await _documentsFile(fileName);
         if (!await source.exists()) {
             return null;
         }

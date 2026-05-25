@@ -59,8 +59,8 @@ class _TextStringsState extends State<TextStrings> {
         super.dispose();
     }
 
-    RestartableTimer createTimer(int period) {
-        return RestartableTimer(Duration(milliseconds: period), onTimerDone);
+    RestartableTimer _createTimer(int period) {
+        return RestartableTimer(Duration(milliseconds: period), _onTimerDone);
     }
 
     @override
@@ -68,7 +68,7 @@ class _TextStringsState extends State<TextStrings> {
         Widget textWidget = TextField(
             style: this.widget.textStyle,
             controller: this._textEditingController,
-            maxLines: this.widget.lineCount != 0
+            maxLines: (this.widget.lineCount != null && this.widget.lineCount != 0)
                 ? this.widget.lineCount
                 : (this._currentStrings == null)
                     ? 1
@@ -77,7 +77,7 @@ class _TextStringsState extends State<TextStrings> {
             readOnly: this.widget.readOnly,
             selectionControls: DesktopTextSelectionControls(),
             enableInteractiveSelection: !this.widget.disabled,
-            onChanged: this.widget.disabled ? null : onAggregatedChange, // don't set to null if widget.readOnly or it will disable
+            onChanged: this.widget.disabled ? null : _onAggregatedChange, // don't set to null if widget.readOnly or it will disable
         );
 
         Widget containedChild;
@@ -117,34 +117,52 @@ class _TextStringsState extends State<TextStrings> {
         }
     }
 
-    void onAggregatedChange(String value) {
+    void _onAggregatedChange(String value) {
         this._currentStrings = Strings.from(value.split('\n'));
 
-        if (!nullOrZero(this.widget.aggregateDelay)) {
-            if (this._onChangeTimer != null) {
-                this._onChangeTimer!.reset(); // start it or restart (kick it down the road)
-            } else {
-                this._onChangeTimer = this.createTimer(this.widget.aggregateDelay!);
-            }
+        bool hasDebounce = !nullOrZero(this.widget.aggregateDelay);
+        bool hasMaxDebounce = !nullOrZero(this.widget.maxAggregateDelay);
+
+        if (!hasDebounce && !hasMaxDebounce) {
+            this._onTimerDone();
+            return;
         }
 
-        if (!nullOrZero(this.widget.maxAggregateDelay)) {
-            if (this._maximumOnChangeTimer != null) {
-                if (!this._maximumOnChangeTimer!.isActive) {
-                    this._maximumOnChangeTimer!.reset(); // start it
-                    // else let it continue
-                }
-            } else {
-                this._maximumOnChangeTimer = this.createTimer(this.widget.maxAggregateDelay!);
-            }
+        if (hasDebounce) {
+            this._restartDebounce();
         }
-
-        if (nullOrZero(this.widget.aggregateDelay) && nullOrZero(this.widget.maxAggregateDelay)) {
-            this.onTimerDone();
+        if (hasMaxDebounce) {
+            this._ensureMaxDebounce();
         }
     }
 
-    void onTimerDone() {
+    /// Kicks the per-keystroke debounce timer forward to `aggregateDelay`
+    /// from now, restarting it on each call.
+    void _restartDebounce() {
+        if (this._onChangeTimer != null) {
+            this._onChangeTimer!.reset();
+        } else {
+            this._onChangeTimer = this._createTimer(this.widget.aggregateDelay!);
+        }
+    }
+
+    /// Starts the ceiling timer on first input and lets it run to completion;
+    /// subsequent keystrokes do not extend it.
+    void _ensureMaxDebounce() {
+        if (this._maximumOnChangeTimer == null) {
+            this._maximumOnChangeTimer = this._createTimer(this.widget.maxAggregateDelay!);
+        } else if (!this._maximumOnChangeTimer!.isActive) {
+            this._maximumOnChangeTimer!.reset();
+        }
+    }
+
+    void _onTimerDone() {
+        // _currentStrings is populated by _onAggregatedChange before either
+        // timer is scheduled, so it is always non-null here. Guard anyway
+        // to document the invariant and survive any future restructuring.
+        if (this._currentStrings == null) {
+            return;
+        }
         this.widget.onChange(this._currentStrings!);
 
         this._onChangeTimer?.cancel();

@@ -58,4 +58,45 @@ void main() {
         TextEditingValue result = formatter.formatEditUpdate(_value('2/2'), _value('2/29'));
         expect(result.text, '2/2');
     });
+
+    test('auto-inserts slash after a two-digit day (single-digit month)', () {
+        // "5/13" + typing "5" -> "5/13/5"
+        TextEditingValue result = formatter.formatEditUpdate(_value('5/13'), _value('5/135'));
+        expect(result.text, '5/13/5');
+        expect(result.selection.baseOffset, 6);
+    });
+
+    test('auto-inserts slash after a two-digit day (two-digit month)', () {
+        // "12/25" + typing "5" -> "12/25/5"
+        TextEditingValue result = formatter.formatEditUpdate(_value('12/25'), _value('12/255'));
+        expect(result.text, '12/25/5');
+        expect(result.selection.baseOffset, 7);
+    });
+
+    test('accepts a single-digit-day separator: d/d/', () {
+        TextEditingValue result = formatter.formatEditUpdate(_value('5/3'), _value('5/3/'));
+        expect(result.text, '5/3/');
+    });
+
+    test('accepts a two-digit-day separator: dd/dd/', () {
+        TextEditingValue result = formatter.formatEditUpdate(_value('12/25'), _value('12/25/'));
+        expect(result.text, '12/25/');
+    });
+
+    test('rejects further input after a complete four-digit year', () {
+        TextEditingValue result = formatter.formatEditUpdate(_value('5/3/2024'), _value('5/3/20245'));
+        expect(result.text, '5/3/2024');
+    });
+
+    test('allows shrinking a complete date (backspacing)', () {
+        TextEditingValue result = formatter.formatEditUpdate(_value('5/3/2024'), _value('5/3/202'));
+        expect(result.text, '5/3/202');
+    });
+
+    test('rejects an unparseable length-4 paste rather than throwing', () {
+        // Pasting "12/3" lands at length 4 with a slash at index 2 — not a
+        // shape produced by natural typing. Must not throw on int.parse.
+        TextEditingValue result = formatter.formatEditUpdate(_value(''), _value('12/3'));
+        expect(result.text, '');
+    });
 }

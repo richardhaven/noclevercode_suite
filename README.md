@@ -21,7 +21,7 @@ copy-pasted between apps, pulled into one place.
 
 | File | What it provides |
 | --- | --- |
-| `common.dart` | Shared typedefs (`OnEvent`, `OnIntChange`, `OnBoolChange`, `OnStringChange`, `OnStringsChange`, `OnStringTranslateCheck`), `CaptionLocation` and `TextAlign` enums, `nullOrBlank` / `nullOrZero` / `boolishToString` helpers |
+| `common.dart` | Shared typedefs (`OnEvent`, `OnIntChange`, `OnBoolChange`, `OnStringChange`, `OnStringsChange`, `OnStringTranslateCheck`), `CaptionLocation` and `NccTextAlign` enums, `nullOrBlank` / `nullOrZero` helpers |
 | `strings.dart` | `Strings` — a small wrapper over `List<String>` with set-like operations |
 | `text_strings.dart` | i18n-friendly text constants and lookup utilities |
 | `csv_file_io.dart` | Read / write CSV files via `path_provider` |

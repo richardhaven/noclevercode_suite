@@ -158,7 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     value: this.singleCheckDisabled,
                     onChange: (value) {
                       this.setState(() => this.singleCheckDisabled = value);
-                      this.logLine('buttonDisabled set to ${ncc_common.boolishToString(this.checkboxesDisabled)}');
+                      this.logLine('buttonDisabled set to ${this.checkboxesDisabled}');
                     },
                   ),
                 ),

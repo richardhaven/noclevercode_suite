@@ -86,11 +86,24 @@ void main() {
     });
 
     group('Strings.indexOfLeadingText', () {
-        // Documents current behavior: stub always returns -1.
-        test('returns -1 for any input', () {
+        test('finds the first element starting with the given prefix', () {
+            Strings strings = Strings(['apple', 'banana', 'apricot']);
+            expect(strings.indexOfLeadingText('app'), 0);
+            expect(strings.indexOfLeadingText('ban'), 1);
+            expect(strings.indexOfLeadingText('apr'), 2);
+        });
+        test('returns -1 when no element matches', () {
             Strings strings = Strings(['apple', 'banana']);
-            expect(strings.indexOfLeadingText('app'), -1);
+            expect(strings.indexOfLeadingText('xyz'), -1);
+        });
+        test('empty prefix matches the first element', () {
+            Strings strings = Strings(['apple', 'banana']);
+            expect(strings.indexOfLeadingText(''), 0);
+        });
+        test('returns -1 on an empty list regardless of prefix', () {
+            Strings strings = Strings([]);
             expect(strings.indexOfLeadingText(''), -1);
+            expect(strings.indexOfLeadingText('a'), -1);
         });
     });
 

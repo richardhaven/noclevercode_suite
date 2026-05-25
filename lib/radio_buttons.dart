@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:noclevercode_suite/common.dart' as ncc_common;
+import 'package:noclevercode_suite/common.dart';
 import 'package:noclevercode_suite/strings.dart';
 import 'package:noclevercode_suite/widget_utilities.dart';
 
@@ -12,7 +12,7 @@ class RadioButtons extends StatefulWidget {
     final TextStyle? textStyle;
     final Axis orientation;
     final int spacing;
-    final ncc_common.OnStringChange onChange;
+    final OnStringChange onChange;
     final bool disabled;
 
     const RadioButtons({
@@ -80,29 +80,26 @@ class _RadioButtonsState extends State<RadioButtons> {
     }
 
     Widget _createRadioButton(String label, TextDirection? direction, bool disabled, TextStyle? textStyle) {
-        var components = <Widget>[];
-
-        components.add(Radio<String>(
-            groupValue: this.currentSelection,
-            value: label,
-            onChanged: (value) => disabled ? null : this.setSelection(value!),
-        ));
-
-        components.add(Text(label, textAlign: TextAlign.left, maxLines: 1, style: textStyle));
+        List<Widget> components = [
+            Radio<String>(
+                groupValue: this.currentSelection,
+                value: label,
+                onChanged: disabled ? null : (value) => this._setSelection(value!),
+            ),
+            Text(label, textAlign: TextAlign.left, maxLines: 1, style: textStyle),
+        ];
 
         if (direction == TextDirection.rtl) {
-            var temp = components.first;
-            components.first = components.last;
-            components.last = temp;
+            components = components.reversed.toList();
         }
 
         return GestureDetector(
-            onTap: disabled ? null : () => this.setSelection(label),
+            onTap: disabled ? null : () => this._setSelection(label),
             child: Row(children: components),
         );
     }
 
-    void setSelection(String? value) {
+    void _setSelection(String? value) {
         this.setState(() {
             this.currentSelection = value;
             this.widget.onChange(value);

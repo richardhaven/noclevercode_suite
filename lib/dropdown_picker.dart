@@ -31,6 +31,7 @@ class DropdownPicker extends StatefulWidget {
 
 class _DropdownPickerState extends State<DropdownPicker> {
     String? _selected;
+    bool _autoselectScheduled = false;
 
     @override
     void initState() {
@@ -54,11 +55,13 @@ class _DropdownPickerState extends State<DropdownPicker> {
             return;
         }
         String sole = labels[0];
-        if (_selected == sole) {
+        if (_selected == sole || _autoselectScheduled) {
             return;
         }
         _selected = sole;
+        _autoselectScheduled = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
+            _autoselectScheduled = false;
             if (mounted) {
                 this.widget.onChange(sole);
             }

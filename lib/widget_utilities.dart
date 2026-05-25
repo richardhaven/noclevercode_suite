@@ -35,31 +35,35 @@ Widget createScrollingContainer(
     ScrollController scrollController, {
     BoxDecoration? boxDecoration,
     MainAxisAlignment mainAxisAlignment = MainAxisAlignment.spaceAround,
-    Axis? orientation = Axis.horizontal,
+    Axis orientation = Axis.horizontal,
     CrossAxisAlignment crossAlignment = CrossAxisAlignment.center,
 }) {
+    Widget lane = orientation == Axis.horizontal
+        ? Row(
+            mainAxisAlignment: mainAxisAlignment,
+            crossAxisAlignment: crossAlignment,
+            children: children,
+        )
+        : Column(
+            mainAxisAlignment: mainAxisAlignment,
+            crossAxisAlignment: crossAlignment,
+            children: children,
+        );
+
     return Container(
         decoration: boxDecoration,
         child: Scrollbar(
             thickness: 10,
             radius: const Radius.circular(20),
-            scrollbarOrientation: ScrollbarOrientation.bottom,
+            scrollbarOrientation: orientation == Axis.vertical
+                ? ScrollbarOrientation.right
+                : ScrollbarOrientation.bottom,
             controller: scrollController,
             child: SingleChildScrollView(
-                scrollDirection: orientation ?? Axis.horizontal,
+                scrollDirection: orientation,
                 clipBehavior: Clip.none,
                 controller: scrollController,
-                child: orientation == Axis.horizontal
-                    ? Row(
-                        mainAxisAlignment: mainAxisAlignment,
-                        crossAxisAlignment: crossAlignment,
-                        children: children,
-                    )
-                    : Column(
-                        mainAxisAlignment: mainAxisAlignment,
-                        crossAxisAlignment: crossAlignment,
-                        children: children,
-                    ),
+                child: lane,
             ),
         ),
     );

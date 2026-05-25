@@ -51,62 +51,40 @@ class WorkingButton extends StatefulWidget {
 class _WorkingButtonState extends State<WorkingButton> {
     bool _working = false;
 
-    bool get working => _working;
-
-    // cannot use a real mutator as we have to pass it around
-    void setWorking(bool value) => this.setState(() => _working = value);
-
-    void doneWorking() => this.setWorking(false);
+    // doneWorking is passed to user handlers, so it must be a closure rather
+    // than a plain method invocation.
+    void doneWorking() => this.setState(() => _working = false);
 
     @override
     Widget build(BuildContext context) {
-        bool effectivelyDisabled = false;
-        if (this.widget.disabled) {
-            effectivelyDisabled = true;
-        } else if (this.working && this.widget.disableWhileWorking) {
-            effectivelyDisabled = true;
-        }
-
-        String effectiveCaption;
-        if (this.working && this.widget.workingCaption != null) {
-            effectiveCaption = this.widget.workingCaption!;
-        } else {
-            effectiveCaption = this.widget.caption;
-        }
-
-        Widget textChild = Text(effectiveCaption, style: this.widget.textStyle);
-
-        Widget result = ElevatedButton(
-            onPressed: effectivelyDisabled
-                ? null
-                : () {
-                    setWorking(true);
-                    this.widget.onPress(doneWorking);
-                },
-            onLongPress: effectivelyDisabled || this.widget.onLongPress == null
-                ? null
-                : () {
-                    this.widget.onLongPress!(doneWorking);
-                },
-            clipBehavior: Clip.none,
-            style: this.widget.buttonStyle,
-            child: textChild,
-        );
-
+        bool effectivelyDisabled = this.widget.disabled || (this._working && this.widget.disableWhileWorking);
+        String effectiveCaption = (this._working ? this.widget.workingCaption : null) ?? this.widget.caption;
         String? effectiveHint;
         if (effectivelyDisabled && this.widget.disabledHint != null) {
             effectiveHint = this.widget.disabledHint;
-        } else if (this.working) {
+        } else if (this._working) {
             effectiveHint = this.widget.workingHint;
         } else {
             effectiveHint = this.widget.hint;
         }
 
+        Widget result = ElevatedButton(
+            onPressed: effectivelyDisabled
+                ? null
+                : () {
+                    this.setState(() => this._working = true);
+                    this.widget.onPress(doneWorking);
+                },
+            onLongPress: effectivelyDisabled || this.widget.onLongPress == null
+                ? null
+                : () => this.widget.onLongPress!(doneWorking),
+            clipBehavior: Clip.none,
+            style: this.widget.buttonStyle,
+            child: Text(effectiveCaption, style: this.widget.textStyle),
+        );
+
         if (effectiveHint != null) {
-            result = Tooltip(
-                message: effectiveHint,
-                child: result,
-            );
+            result = Tooltip(message: effectiveHint, child: result);
         }
 
         return result;

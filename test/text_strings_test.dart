@@ -111,6 +111,73 @@ void main() {
             expect(observed!.toList(), ['hello']);
         });
 
+        testWidgets('aggregateDelay defers onChange until after the delay', (tester) async {
+            Strings? observed;
+            await tester.pumpWidget(_wrap(SizedBox(
+                width: 300,
+                height: 60,
+                child: TextStrings(
+                    lineCount: 1,
+                    aggregateDelay: 300,
+                    onChange: (value) => observed = value,
+                ),
+            )));
+
+            await tester.enterText(find.byType(TextField), 'hi');
+            await tester.pump();
+            expect(observed, isNull);
+
+            await tester.pump(const Duration(milliseconds: 350));
+            expect(observed, isNotNull);
+            expect(observed!.toList(), ['hi']);
+        });
+
+        testWidgets('aggregateDelay restarts on each keystroke', (tester) async {
+            int callCount = 0;
+            await tester.pumpWidget(_wrap(SizedBox(
+                width: 300,
+                height: 60,
+                child: TextStrings(
+                    lineCount: 1,
+                    aggregateDelay: 300,
+                    onChange: (_) => callCount++,
+                ),
+            )));
+
+            await tester.enterText(find.byType(TextField), 'a');
+            await tester.pump(const Duration(milliseconds: 200));
+            await tester.enterText(find.byType(TextField), 'ab');
+            await tester.pump(const Duration(milliseconds: 200));
+            // Neither keystroke's 300 ms window has closed yet.
+            expect(callCount, 0);
+
+            await tester.pump(const Duration(milliseconds: 150));
+            expect(callCount, 1);
+        });
+
+        testWidgets('maxAggregateDelay fires even while keystrokes keep coming', (tester) async {
+            int callCount = 0;
+            await tester.pumpWidget(_wrap(SizedBox(
+                width: 300,
+                height: 60,
+                child: TextStrings(
+                    lineCount: 1,
+                    aggregateDelay: 300,
+                    maxAggregateDelay: 500,
+                    onChange: (_) => callCount++,
+                ),
+            )));
+
+            // Type every 150 ms — fast enough to keep resetting the 300 ms
+            // debounce, but the 500 ms ceiling should still fire.
+            for (int index = 0; index < 4; index++) {
+                await tester.enterText(find.byType(TextField), 'x' * (index + 1));
+                await tester.pump(const Duration(milliseconds: 150));
+            }
+            // 600 ms elapsed: ceiling (500 ms) has passed.
+            expect(callCount, greaterThanOrEqualTo(1));
+        });
+
         testWidgets('disabled blocks input', (tester) async {
             await tester.pumpWidget(_wrap(SizedBox(
                 width: 300,

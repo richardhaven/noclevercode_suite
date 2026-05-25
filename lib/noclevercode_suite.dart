@@ -1,3 +1,6 @@
+/// noclevercode_suite — a small collection of Flutter widgets and Dart
+/// helpers. Importing this file re-exports every public surface; you can
+/// also import the individual files (e.g. `package:noclevercode_suite/checkboxes.dart`).
 library;
 
 export 'checkboxes.dart';

@@ -7,6 +7,11 @@ typedef StringGenerator = String Function(int);
 /// A small wrapper over `List<String>` exposing the [ListBase] API plus a
 /// few set-like and ordering operations used across the suite. The backing
 /// list is fixed-length unless [growable] is true.
+///
+/// Constructor [growable] defaults are intentionally inconsistent:
+/// [Strings.empty] defaults to `growable: true` because an empty list is
+/// almost always built up; every other constructor defaults to `false`
+/// because the caller is supplying their final content up front.
 class Strings extends ListBase<String> {
     late List<String> data;
     late bool growable;
@@ -25,8 +30,9 @@ class Strings extends ListBase<String> {
         this.data = List<String>.filled(size, '', growable: false);
     }
 
-    /// Empty list. Defaults to growable; the backing store still relies on
-    /// the [length] setter for growth.
+    /// Empty list. The [growable] flag controls whether [length] can be
+    /// changed later; the backing store is always rebuilt via the [length]
+    /// setter when it grows.
     Strings.empty({this.growable = true}) {
         this.data = List<String>.empty(growable: false);
     }
@@ -49,15 +55,16 @@ class Strings extends ListBase<String> {
 
     @override
     set length(int newLength) {
-        if (newLength == data.length) {
+        if (newLength == this.data.length) {
             return;
         } else if (!this.growable) {
             throw UnsupportedError('Cannot change the length of a fixed-length list');
         } else {
             // String elements cannot be null, so a plain length change would leave gaps.
-            data = Strings.generate(newLength, (int index) {
-                if (index < data.length) {
-                    return data[index];
+            List<String> previous = this.data;
+            this.data = List<String>.generate(newLength, (int index) {
+                if (index < previous.length) {
+                    return previous[index];
                 } else {
                     return '';
                 }
@@ -89,8 +96,14 @@ class Strings extends ListBase<String> {
         return this;
     }
 
+    /// Returns the index of the first element that starts with [leadingText],
+    /// or -1 if none does. An empty [leadingText] matches the first element.
     int indexOfLeadingText(String leadingText) {
-        for (int index = 0; index < this.length; index++) {}
+        for (int index = 0; index < this.length; index++) {
+            if (this.data[index].startsWith(leadingText)) {
+                return index;
+            }
+        }
         return -1;
     }
 
@@ -103,10 +116,7 @@ class Strings extends ListBase<String> {
     }
 
     /// Returns a shallow copy.
-    Strings copy() {
-        Strings result = Strings.from(this);
-        return result;
-    }
+    Strings copy() => Strings.from(this);
 }
 
 /// Counts occurrences of a single-character string.

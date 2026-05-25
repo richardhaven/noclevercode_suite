@@ -16,10 +16,4 @@ void main() {
         test('false for positive', () => expect(nullOrZero(1), isFalse));
         test('false for negative', () => expect(nullOrZero(-1), isFalse));
     });
-
-    group('boolishToString', () {
-        test('null', () => expect(boolishToString(null), 'null'));
-        test('true', () => expect(boolishToString(true), 'true'));
-        test('false', () => expect(boolishToString(false), 'false'));
-    });
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:noclevercode_suite/common.dart' as ncc_common;
+import 'package:noclevercode_suite/common.dart';
 import 'package:noclevercode_suite/strings.dart';
 import 'package:noclevercode_suite/widget_utilities.dart';
 
@@ -10,9 +10,9 @@ class CheckBoxes extends StatefulWidget {
     final BoxDecoration? boxDecoration;
     final TextStyle? textStyle;
     final Strings? selected;
-    final ncc_common.OnStringsChange onChange;
+    final OnStringsChange onChange;
     final Axis orientation;
-    final ncc_common.TextAlign? verticalTextAlignment;
+    final NccTextAlign? verticalTextAlignment;
     final int spacing;
     final bool disabled;
 
@@ -71,17 +71,11 @@ class _CheckBoxesState extends State<CheckBoxes> {
 
         CrossAxisAlignment crossAlignment = CrossAxisAlignment.center;
         if (this.widget.orientation == Axis.vertical) {
-            switch (this.widget.verticalTextAlignment) {
-                case null || ncc_common.TextAlign.center:
-                    crossAlignment = CrossAxisAlignment.center;
-                    break;
-                case ncc_common.TextAlign.start:
-                    crossAlignment = CrossAxisAlignment.start;
-                    break;
-                case ncc_common.TextAlign.end:
-                    crossAlignment = CrossAxisAlignment.end;
-                    break;
-            }
+            crossAlignment = switch (this.widget.verticalTextAlignment) {
+                NccTextAlign.start => CrossAxisAlignment.start,
+                NccTextAlign.end => CrossAxisAlignment.end,
+                null || NccTextAlign.center => CrossAxisAlignment.center,
+            };
         }
 
         return createScrollingContainer(
@@ -95,26 +89,23 @@ class _CheckBoxesState extends State<CheckBoxes> {
     }
 
     Widget _createCheckbox(String label, int spacing, TextDirection? direction, bool disabled, TextStyle? textStyle) {
-        var children = <Widget>[];
-
-        children.add(Checkbox(
-            value: this.isSelected(label),
-            onChanged: (bool? value) => disabled ? null : this.setState(() => this.toggleLabel(label)),
-        ));
-
-        children.add(Text(label, textAlign: TextAlign.start, maxLines: 1, style: textStyle));
+        List<Widget> children = [
+            Checkbox(
+                value: this._isSelected(label),
+                onChanged: disabled ? null : (bool? value) => this.setState(() => this._toggleLabel(label)),
+            ),
+            Text(label, textAlign: TextAlign.start, maxLines: 1, style: textStyle),
+        ];
 
         if (direction == TextDirection.rtl) {
-            var temp = children.first;
-            children.first = children.last;
-            children.last = temp;
+            children = children.reversed.toList();
         }
 
         return Row(children: children);
     }
 
-    bool onSelect(String label) {
-        bool result = !this.isSelected(label);
+    bool _onSelect(String label) {
+        bool result = !this._isSelected(label);
         if (result) {
             this.setState(() {
                 this.selected.add(label);
@@ -126,8 +117,8 @@ class _CheckBoxesState extends State<CheckBoxes> {
         return result;
     }
 
-    bool onDeselect(String label) {
-        bool result = this.isSelected(label);
+    bool _onDeselect(String label) {
+        bool result = this._isSelected(label);
         if (result) {
             this.setState(() {
                 this.selected.remove(label);
@@ -138,15 +129,15 @@ class _CheckBoxesState extends State<CheckBoxes> {
         return result;
     }
 
-    bool isSelected(String label) {
+    bool _isSelected(String label) {
         return this.selected.contains(label);
     }
 
-    void toggleLabel(String label) {
-        if (this.isSelected(label)) {
-            this.onDeselect(label);
+    void _toggleLabel(String label) {
+        if (this._isSelected(label)) {
+            this._onDeselect(label);
         } else {
-            this.onSelect(label);
+            this._onSelect(label);
         }
     }
 }
@@ -156,10 +147,10 @@ class _CheckBoxesState extends State<CheckBoxes> {
 class SingleCheck extends StatelessWidget {
     final String label;
     final bool? value;
-    final ncc_common.OnBoolChange onChange;
+    final OnBoolChange onChange;
     final TextStyle? textStyle;
     final BoxDecoration? boxDecoration;
-    final bool? disabled;
+    final bool disabled;
 
     const SingleCheck({
         super.key,
@@ -167,7 +158,7 @@ class SingleCheck extends StatelessWidget {
         required this.onChange,
         this.value = false,
         this.textStyle,
-        this.disabled,
+        this.disabled = false,
         this.boxDecoration,
     });
 
@@ -176,11 +167,11 @@ class SingleCheck extends StatelessWidget {
         return CheckBoxes(
             labels: Strings([this.label]),
             selected: this.value == true ? Strings([this.label]) : null,
-            disabled: this.disabled == true,
+            disabled: this.disabled,
             boxDecoration: this.boxDecoration,
             textStyle: this.textStyle,
             onChange: (selected) {
-                if (this.disabled != true) {
+                if (!this.disabled) {
                     this.onChange(selected.contains(this.label));
                 }
             },

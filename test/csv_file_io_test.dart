@@ -1,8 +1,80 @@
+import 'dart:io';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:noclevercode_suite/csv_file_io.dart';
 import 'package:noclevercode_suite/strings.dart';
 
 void main() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+
+    late Directory tempDir;
+    const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+
+    setUp(() async {
+        tempDir = await Directory.systemTemp.createTemp('ncc_csv_io_');
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+            pathProviderChannel,
+            (MethodCall call) async {
+                if (call.method == 'getApplicationDocumentsDirectory') {
+                    return tempDir.path;
+                }
+                return null;
+            },
+        );
+    });
+
+    tearDown(() async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, null);
+        if (await tempDir.exists()) {
+            await tempDir.delete(recursive: true);
+        }
+    });
+
+    group('localFileWrite', () {
+        test('writes content to a new file', () async {
+            bool ok = await localFileWrite('out.txt', 'hello');
+            expect(ok, isTrue);
+            expect(await File('${tempDir.path}/out.txt').readAsString(), 'hello');
+        });
+
+        test('overwrites an existing file', () async {
+            await File('${tempDir.path}/out.txt').writeAsString('old');
+            bool ok = await localFileWrite('out.txt', 'new');
+            expect(ok, isTrue);
+            expect(await File('${tempDir.path}/out.txt').readAsString(), 'new');
+        });
+    });
+
+    group('localFileAppend', () {
+        test('creates the file when missing', () async {
+            bool ok = await localFileAppend('log.txt', 'first');
+            expect(ok, isTrue);
+            expect(await File('${tempDir.path}/log.txt').readAsString(), 'first');
+        });
+
+        test('appends to existing content', () async {
+            await File('${tempDir.path}/log.txt').writeAsString('first');
+            bool ok = await localFileAppend('log.txt', '-second');
+            expect(ok, isTrue);
+            expect(await File('${tempDir.path}/log.txt').readAsString(), 'first-second');
+        });
+    });
+
+    group('localFileRead', () {
+        test('returns null when the file does not exist', () async {
+            Strings? result = await localFileRead('missing.txt');
+            expect(result, isNull);
+        });
+
+        test('returns lines split on newline', () async {
+            await File('${tempDir.path}/data.txt').writeAsString('a\nb\nc');
+            Strings? result = await localFileRead('data.txt');
+            expect(result, isNotNull);
+            expect(result!.toList(), ['a', 'b', 'c']);
+        });
+    });
+
     group('undelimitStrings', () {
         test('splits each row on commas', () {
             Strings input = Strings(['a,b,c', '1,2,3']);
@@ -33,7 +105,4 @@ void main() {
         });
     });
 
-    // localFileRead / localFileWrite / localFileAppend hit path_provider,
-    // which needs a platform channel mock to test in pure Dart. Covered
-    // indirectly by example-app smoke testing on real devices.
 }
