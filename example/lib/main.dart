@@ -55,6 +55,21 @@ class _MyHomePageState extends State<MyHomePage> {
   bool? dropdownDisabled;
   String? dropdownSelection;
 
+  DropdownPickerKeySearch dropdownKeySearch = DropdownPickerKeySearch.disabled;
+
+  static const Map<String, DropdownPickerKeySearch> _keySearchByLabel = {
+    'disabled': DropdownPickerKeySearch.disabled,
+    'first letter': DropdownPickerKeySearch.firstLetter,
+    'incremental': DropdownPickerKeySearch.incremental,
+  };
+  static final Strings _keySearchLabels = Strings.from(_keySearchByLabel.keys.toList());
+
+  String get _keySearchLabel {
+    return _keySearchByLabel.entries
+        .firstWhere((entry) => entry.value == this.dropdownKeySearch)
+        .key;
+  }
+
   bool? checkboxesDisabled;
 
   Strings? checkboxesSelection = null;
@@ -92,7 +107,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    dropdownSelectionEditingController.text = this.dropdownSelection ?? '';
+    final String desiredText = this.dropdownSelection ?? '';
+    if (dropdownSelectionEditingController.text != desiredText) {
+      dropdownSelectionEditingController.text = desiredText;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -165,19 +183,25 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
             TableRow(children: [
-              TextStrings(
-                  caption: 'Text Strings',
-                  captionLocation: ncc_common.CaptionLocation.above,
-                  boxDecoration: BoxDecoration(
-                    border: Border.all(color: Colors.deepPurple),
-                  ),
-                  strings: this.textStrings,
-                  aggregateDelay: this.textStringDelay,
-                  disabled: this.textStringsDisabled == true,
-                  onChange: (Strings strings) {
-                    this.logLine('TextStrings changed $strings');
-                    this.setState(() => this.textStrings = strings);
-                  }),
+              SizedBox(
+                height: 120,
+                child: SingleChildScrollView(
+                  child: TextStrings(
+                      caption: 'Text Strings',
+                      captionLocation: ncc_common.CaptionLocation.above,
+                      boxDecoration: BoxDecoration(
+                        border: Border.all(color: Colors.deepPurple),
+                      ),
+                      strings: this.textStrings,
+                      aggregateDelay: this.textStringDelay,
+                      disabled: this.textStringsDisabled == true,
+                      lineCount: 100,
+                      onChange: (Strings strings) {
+                        this.logLine('TextStrings changed $strings');
+                        this.setState(() => this.textStrings = strings);
+                      }),
+                ),
+              ),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -211,6 +235,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     labels: this.textStrings,
                     selected: this.dropdownSelection,
                     disabled: this.dropdownDisabled == true,
+                    keySearch: this.dropdownKeySearch,
                     onChange: (String? value) {
                       this.setState(() => this.dropdownSelection = value);
                       this.logLine('DropdownPicker selected $value');
@@ -234,6 +259,25 @@ class _MyHomePageState extends State<MyHomePage> {
                       this.logLine('dropdownDisabled set to ${this.dropdownDisabled}');
                     },
                   ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('keySearch:'),
+                    const SizedBox(width: 8),
+                    DropdownPicker(
+                      labels: _keySearchLabels,
+                      selected: this._keySearchLabel,
+                      autoselectSole: false,
+                      onChange: (String? value) {
+                        if (value == null) return;
+                        final DropdownPickerKeySearch mode =
+                            _keySearchByLabel[value] ?? DropdownPickerKeySearch.disabled;
+                        this.setState(() => this.dropdownKeySearch = mode);
+                        this.logLine('dropdownKeySearch set to $mode');
+                      },
+                    ),
+                  ],
                 ),
               ])
             ]),
